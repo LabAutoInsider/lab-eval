@@ -1,0 +1,6 @@
+below_min_2ul: ACCEPTED | Belt calibration not found.
+above_well_400ul: ACCEPTED | Belt calibration not found.
+above_pipette_1200ul: REJECTED | ProtocolCommandFailedError [line 8]: Error 4000 GENERAL_ERROR (ProtocolCommandFailedError): InvalidAspirateVol
+no_tip: REJECTED | ProtocolCommandFailedError [line 8]: Error 4000 GENERAL_ERROR (ProtocolCommandFailedError): TipNotAttachedErro
+bad_well_A13: REJECTED | KeyError [line 8]: 'A13'
+overdraw_empty: ACCEPTED | Belt calibration not found.
