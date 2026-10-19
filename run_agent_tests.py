@@ -45,6 +45,8 @@ class FakeClient:
         for i, s in enumerate(specs):
             if s[0] == "text":
                 blocks.append(NS(type="text", text=s[1]))
+            elif s[0] == "thinking":
+                blocks.append(NS(type="thinking", thinking=s[1], signature=s[2]))
             else:
                 blocks.append(NS(type="tool_use", id=f"tu_{self.n}_{i}", name=s[1], input=s[2]))
         return NS(content=blocks, usage=NS(input_tokens=100, output_tokens=20), stop_reason="tool_use")
@@ -74,6 +76,15 @@ check("system prompt and tools are sent", c.calls[0]["system"] == agent.SYSTEM_P
 check("agent is never shown the expected answer or tip policy", "expected" not in c.calls[0]["messages"][0]["content"]
       and "new_each" not in c.calls[0]["messages"][0]["content"])
 check("request and starting volumes are shown", "D2 A1: 200 uL" in c.calls[0]["messages"][0]["content"])
+
+# 1b. thinking blocks are sent back intact (this was a real API error in the first live run)
+c = FakeClient([[("thinking", "let me check", "sig123"), ("tool", "run_simulation", {"code": GOOD})],
+                [("tool", "submit_protocol", {"code": GOOD})]])
+r, g = grade("std-01", c)
+sent = c.calls[1]["messages"][1]["content"][0]
+check("thinking block is passed back with its text and signature",
+      sent == {"type": "thinking", "thinking": "let me check", "signature": "sig123"} and g["outcome"] == "pass", sent)
+check("stop reasons are recorded", r["stop_reasons"] == ["tool_use", "tool_use"], r["stop_reasons"])
 
 # 2. failed simulation is reported as an error
 c = FakeClient([[("tool", "run_simulation", {"code": "def run(:"})], [("tool", "refuse", {"reason_code": "overdraw", "explanation": "x"})]])

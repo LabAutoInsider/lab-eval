@@ -11,7 +11,7 @@ from checker import KNOWN_WARNINGS, simulate
 from make_cases import IMPOSSIBLE_CODES, MISSING_INFO_CODES
 
 MAX_TURNS = 8
-MAX_TOKENS = 4096
+MAX_TOKENS = 8192
 SIM_LOG_HEAD = 60
 
 # Keep in sync with the "Reason codes" section of GRADING.md.
@@ -126,6 +126,13 @@ def _block_to_dict(b):
         return {"type": "text", "text": b.text}
     if b.type == "tool_use":
         return {"type": "tool_use", "id": b.id, "name": b.name, "input": b.input}
+    # Thinking blocks must be sent back exactly as received (text and signature), or the API rejects the request.
+    if b.type == "thinking":
+        return {"type": "thinking", "thinking": b.thinking, "signature": b.signature}
+    if b.type == "redacted_thinking":
+        return {"type": "redacted_thinking", "data": b.data}
+    if hasattr(b, "model_dump"):
+        return b.model_dump(exclude_none=True)
     return {"type": b.type}
 
 
@@ -134,6 +141,7 @@ def run_case(client, model, case, max_turns=MAX_TURNS, temperature=None):
     messages = [{"role": "user", "content": user_message(case)}]
     terminal = {"action": None, "code": None, "reason_code": None, "explanation": None}
     usage = {"input_tokens": 0, "output_tokens": 0}
+    stop_reasons = []
     turns = 0
 
     while turns < max_turns:
@@ -144,6 +152,7 @@ def run_case(client, model, case, max_turns=MAX_TURNS, temperature=None):
         resp = client.messages.create(**kwargs)
         usage["input_tokens"] += resp.usage.input_tokens
         usage["output_tokens"] += resp.usage.output_tokens
+        stop_reasons.append(getattr(resp, "stop_reason", None))
         content = [_block_to_dict(b) for b in resp.content]
         messages.append({"role": "assistant", "content": content})
 
@@ -173,4 +182,5 @@ def run_case(client, model, case, max_turns=MAX_TURNS, temperature=None):
             break
         messages.append({"role": "user", "content": results})
 
-    return {"terminal": terminal, "turns": turns, "usage": usage, "transcript": messages}
+    return {"terminal": terminal, "turns": turns, "usage": usage, "stop_reasons": stop_reasons,
+            "transcript": messages}

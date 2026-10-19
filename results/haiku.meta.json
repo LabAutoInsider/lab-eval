@@ -1,0 +1,11 @@
+{
+  "model": "claude-haiku-5-5",
+  "date": "2026-10-19",
+  "git_commit": "74d4507",
+  "system_prompt_sha256": "3fcba05006a4",
+  "validator_mode": "hidden",
+  "max_turns": 8,
+  "runs_per_case": 3,
+  "temperature": "API default",
+  "thinking": "API default (not set by this script)"
+}

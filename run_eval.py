@@ -59,6 +59,7 @@ def run_all(client, model, cases, runs, out_path, ids=None, max_turns=agent.MAX_
         graded = checker.grade_run(case, result["terminal"], result["terminal"].get("code"))
         record = {"case_id": cid, "run": r, "model": model, "terminal": result["terminal"],
                   "graded": graded, "turns": result["turns"], "usage": result["usage"],
+                  "stop_reasons": result["stop_reasons"],
                   "transcript": result["transcript"]}
         with open(out_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -131,7 +132,8 @@ def main():
         meta = {"model": a.model, "date": datetime.date.today().isoformat(), "git_commit": _git_commit(),
                 "system_prompt_sha256": hashlib.sha256(agent.SYSTEM_PROMPT.encode()).hexdigest()[:12],
                 "validator_mode": "hidden", "max_turns": a.max_turns, "runs_per_case": a.runs,
-                "temperature": a.temperature if a.temperature is not None else "API default"}
+                "temperature": a.temperature if a.temperature is not None else "API default",
+                "thinking": "API default (not set by this script)"}
         with open(f"results/{tag}.meta.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2)
         ids = set(a.ids.split(",")) if a.ids else None
